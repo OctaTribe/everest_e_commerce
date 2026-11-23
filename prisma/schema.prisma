@@ -1,0 +1,291 @@
+// Everest Steel Furniture Udyog (Birgunj, Nepal - Est. 2039/2040 BS)
+// Normalized Enterprise Data Model for Heavy Steel Furniture Manufacturing & Commerce
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  DEALER
+  ADMIN
+}
+
+enum ProductCategory {
+  HOUSEHOLD_ALMIRAH
+  OFFICE_ALMIRAH
+  FILING_CABINETS
+  OFFICE_TABLES
+  SAFES_TIJORI
+  INSTITUTIONAL
+}
+
+enum PreTreatment {
+  HOT_CHEMICAL  // Everest 7-Tank hot phosphate chemical immersion anti-rust
+  COLD_CHEMICAL // Standard cold phosphating wash
+}
+
+enum CoatingType {
+  POWDER_COATED // High-grade electrostatic thermoset polyester powder coating (baked @ 200°C)
+  ENAMEL_COATED // Synthetic stove-enameled heavy industrial coating
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  IN_PRODUCTION
+  DISPATCHED_FROM_BIRGUNJ
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  ESEWA
+  KHALTI
+  FONEPAY
+  CONNECTIPS
+  COD_PARTIAL_ADVANCE
+}
+
+enum PaymentStatus {
+  UNPAID
+  ADVANCE_PAID
+  PAID_FULL
+  REFUNDED
+}
+
+enum DealerApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum OrganizationType {
+  SCHOOL_COLLEGE
+  BANK_FINANCIAL
+  HOSPITAL_CLINIC
+  GOVERNMENT_OFFICE
+  COMMERCIAL_ENTERPRISE
+  RESELLER_DEALER
+}
+
+enum QuoteRequestStatus {
+  NEW
+  CONTACTED
+  QUOTE_SENT
+  CLOSED
+}
+
+model User {
+  id                String             @id @default(cuid())
+  name              String
+  email             String?            @unique
+  phone             String?            @unique
+  passwordHash      String?
+  role              Role               @default(CUSTOMER)
+  isVerified        Boolean            @default(false)
+  dealerProfile     DealerApplication?
+  orders            Order[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([role])
+}
+
+model Product {
+  id                    String            @id @default(cuid())
+  slug                  String            @unique
+  name                  String            // e.g., "Sansaar Model", "Ladies Gents Model", "Tijori Safe"
+  nepaliName            String?           // e.g., "संसार मोडल स्टील दराज"
+  tagline               String?           // e.g., "Nepal's Benchmark Household Steel Wardrobe Since 2039 BS"
+  baseDescription       String            @db.Text
+  category              ProductCategory
+  warrantyYears         Int               @default(5)
+  preTreatment          PreTreatment      @default(HOT_CHEMICAL)
+  steelGauge            String            // e.g., "20/22 Heavy Gauge Prime CRCA Steel"
+  sheetSource           String?           // e.g., "Tata Steel / Jindal Prime CRCA Sheets"
+  hasLocker             Boolean           @default(true)
+  hasMirror             Boolean           @default(false)
+  hasSecretCompartment  Boolean           @default(false)
+  lockMechanism         String?           // e.g., "Everest Heavy 6-Lever Brass Unpickable Mechanism"
+  isBestseller          Boolean           @default(false)
+  isFeatured            Boolean           @default(false)
+  variants              ProductVariant[]
+  bulkQuoteItems        BulkQuoteItem[]
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@index([category])
+  @@index([isBestseller])
+  @@index([isFeatured])
+}
+
+model ProductVariant {
+  id                      String          @id @default(cuid())
+  productId               String
+  product                 Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku                     String          @unique // e.g., "ESF-SAN-78-PW-MRN"
+  coatingType             CoatingType     @default(POWDER_COATED)
+  colorName               String          // Maroon, Water Blue, Pink, Brown, Classic Grey, Ivory
+  colorHex                String          // e.g., "#7F1D1D"
+  heightInches            Float           // 66, 72, 78
+  widthInches             Float           // 36, 40, 48, 54
+  depthInches             Float           // 19, 21, 22, 24
+  weightKg                Float           // 65, 85, 115, 180, 260
+  mrpNpr                  Float           // Maximum Retail Price
+  sellingPriceNpr         Float           // Factory Direct Selling Price
+  dealerPriceNpr          Float           // Verified Dealer / B2B Wholesale Price
+  stockQty                Int             @default(15)
+  isPopular               Boolean         @default(false)
+  exteriorImages          String[]        // URLs / file paths for 360 exterior shots
+  interiorCutawayImage    String?         // Technical cutaway showing lockers, drawers, rods
+  dimensionBlueprintImage String?         // Architectural schematic blueprint
+  orderItems              OrderItem[]
+  createdAt               DateTime        @default(now())
+  updatedAt               DateTime        @updatedAt
+
+  @@index([productId])
+  @@index([sku])
+  @@index([heightInches])
+}
+
+model ShippingZone {
+  id                    String    @id @default(cuid())
+  provinceNumber        Int       // 1 - 7
+  provinceName          String    // Koshi, Madhesh, Bagmati, Gandaki, Lumbini, Karnali, Sudurpashchim
+  cityHub               String    // Birgunj (Factory), Kathmandu Valley, Pokhara, Chitwan, etc.
+  coverageAreas         String    // Sub-districts and major highway access points
+  heavyFreightChargeNpr Float     // Freight calculation per heavy steel wardrobe (e.g. 500 - 2800 NPR)
+  estimatedDispatchDays String    // e.g., "1-2 Days (Same day dispatch in Birgunj corridor)"
+  isActive              Boolean   @default(true)
+  orders                Order[]
+
+  @@index([provinceNumber])
+  @@index([cityHub])
+}
+
+model Order {
+  id                        String              @id @default(cuid())
+  orderNumber               String              @unique // e.g., "ESF-2026-9041"
+  userId                    String?
+  user                      User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  customerName              String
+  customerPhone             String
+  customerEmail             String?
+  shippingAddress           String
+  shippingCity              String
+  landmark                  String?
+  shippingZoneId            String
+  shippingZone              ShippingZone        @relation(fields: [shippingZoneId], references: [id])
+  subtotalNpr               Float
+  freightChargeNpr          Float
+  discountNpr               Float               @default(0)
+  totalNpr                  Float
+  orderStatus               OrderStatus         @default(PENDING)
+  paymentStatus             PaymentStatus       @default(UNPAID)
+  advanceAmountRequiredNpr  Float               @default(0) // Everest requires 20% advance for custom builds
+  orderItems                OrderItem[]
+  transactions              PaymentTransaction[]
+  notes                     String?
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
+
+  @@index([userId])
+  @@index([orderNumber])
+  @@index([orderStatus])
+}
+
+model OrderItem {
+  id                String          @id @default(cuid())
+  orderId           String
+  order             Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productVariantId  String
+  variant           ProductVariant  @relation(fields: [productVariantId], references: [id])
+  productName       String
+  sku               String
+  colorName         String
+  dimensionsSummary String          // e.g., "78H x 40W x 21D (Inches)"
+  quantity          Int             @default(1)
+  unitPriceNpr      Float
+  totalPriceNpr     Float
+}
+
+model PaymentTransaction {
+  id                    String        @id @default(cuid())
+  orderId               String
+  order                 Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method                PaymentMethod
+  transactionReference  String?       // Gateway transaction ID / Bank transfer UTR
+  amountNpr             Float
+  status                PaymentStatus @default(UNPAID)
+  rawGatewayResponse    String?       @db.Text
+  createdAt             DateTime      @default(now())
+
+  @@index([orderId])
+  @@index([status])
+}
+
+model DealerApplication {
+  id                      String                  @id @default(cuid())
+  userId                  String?                 @unique
+  user                    User?                   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  businessName            String                  // e.g., "Narayani Steel Traders"
+  panVatNumber            String                  // Nepal IRD PAN/VAT
+  ownerName               String
+  contactPhone            String
+  contactEmail            String
+  showroomLocation        String
+  city                    String
+  province                String
+  yearsInBusiness         Int                     @default(1)
+  estimatedMonthlyVolume  String?                 // e.g., "20-40 Units / Month"
+  status                  DealerApplicationStatus @default(SUBMITTED)
+  adminNotes              String?
+  appliedAt               DateTime                @default(now())
+  reviewedAt              DateTime?
+
+  @@index([panVatNumber])
+  @@index([status])
+}
+
+model BulkQuoteRequest {
+  id                  String              @id @default(cuid())
+  quoteNumber         String              @unique // e.g., "B2B-2026-042"
+  organizationName    String              // e.g., "Dolphin Secondary School" / "Nepal SBI Bank"
+  organizationType    OrganizationType
+  contactPerson       String
+  designation         String?
+  contactPhone        String
+  contactEmail        String
+  deliveryCity        String
+  deliveryAddress     String?
+  targetDeliveryDate  DateTime?
+  customRequirements  String?             @db.Text
+  status              QuoteRequestStatus  @default(NEW)
+  items               BulkQuoteItem[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@index([quoteNumber])
+  @@index([status])
+}
+
+model BulkQuoteItem {
+  id                String            @id @default(cuid())
+  quoteRequestId    String
+  quoteRequest      BulkQuoteRequest  @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  productId         String?
+  product           Product?          @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName       String
+  quantity          Int
+  preferredGauge    String?
+  preferredCoating  String?
+  notes             String?
+}

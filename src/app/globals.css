@@ -1,26 +1,102 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0f172a;
+  --foreground: #f8fafc;
+
+  --himalayan-slate: #0f172a;
+  --brushed-steel: #334155;
+  --steel-border: #1e293b;
+  --steel-light: #64748b;
+  
+  --almirah-maroon: #7f1d1d;
+  --almirah-maroon-hover: #991b1b;
+  --almirah-maroon-dark: #450a0a;
+
+  --heritage-gold: #b45309;
+  --heritage-gold-light: #d97706;
+  --heritage-brass: #f59e0b;
+  
+  --off-white: #f8fafc;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@theme {
+  --color-himalayan-slate: #0f172a;
+  --color-brushed-steel: #334155;
+  --color-steel-border: #1e293b;
+  --color-steel-light: #64748b;
+  
+  --color-almirah-maroon: #7f1d1d;
+  --color-almirah-maroon-hover: #991b1b;
+  --color-almirah-maroon-dark: #450a0a;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-heritage-gold: #b45309;
+  --color-heritage-gold-light: #d97706;
+  --color-heritage-brass: #f59e0b;
+  
+  --color-off-white: #f8fafc;
+
+  --font-heading: var(--font-heading), 'Plus Jakarta Sans', sans-serif;
+  --font-sans: var(--font-sans), 'Inter', sans-serif;
+  --font-mono: var(--font-mono), 'JetBrains Mono', monospace;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.font-mono-spec {
+  font-family: var(--font-mono), monospace;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Industrial Steel Grid Texture */
+.steel-grid-bg {
+  background-image: 
+    linear-gradient(to right, rgba(51, 65, 85, 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(51, 65, 85, 0.15) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Chamfered industrial badge */
+.chamfer-clip {
+  clip-path: polygon(8px 0%, 100% 0%, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0% 100%, 0% 8px);
+}
+
+.chamfer-clip-lg {
+  clip-path: polygon(14px 0%, 100% 0%, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0% 100%, 0% 14px);
+}
+
+/* Subtle brushed steel metallic sheen */
+.brushed-metal-sheen {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.01) 50%,
+    rgba(0, 0, 0, 0.25) 100%
+  );
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
